@@ -14,8 +14,8 @@ const RUN = {
   presentation: { isFullscreen: false, columns: 80 },
 } as const
 
-function engine(on: On) {
-  mock.store(on)
+function engine(on: On, stored?: Record<string, unknown>) {
+  mock.store(on, stored)
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('command.register', () => ({ value: { command: 'anbani' } }))
   on('tool.register', () => ({ value: { tool: 'mcp__anbani__level' } }))
@@ -52,5 +52,31 @@ test('each /anbani + adds a letter on every surface, off restores the text', asy
   await $.command.run({ ...RUN, args: 'off' })
   const ui = await $.ui.mount({ ...REPLY, surface: 'desktop' })
   expect((await ui.find({ type: 'Text' }))?.text).toBe('Вот окно, где дерево: `код окно`.')
+  await ui.unmount()
+})
+
+test('off is a pause: on brings back the same letters', async ($, on) => {
+  engine(on)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  await $.command.run({ ...RUN, args: '2' })
+  await $.command.run({ ...RUN, args: 'off' })
+
+  const ui = await $.ui.mount({ ...REPLY, surface: 'desktop' })
+  expect((await ui.find({ type: 'Text' }))?.text).toBe('Вот окно, где дерево: `код окно`.')
+
+  await $.command.run({ ...RUN, args: 'on' })
+  expect((await ui.find({ type: 'Text' }))?.text).toBe('Вოт ოкнო, гдე дეрეвო: `код окно`.')
+  await ui.unmount()
+})
+
+test('a pause survives a restart: the next session starts off, on restores the letters', async ($, on) => {
+  engine(on, { level: 2, off: true })
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+
+  const ui = await $.ui.mount({ ...REPLY, surface: 'desktop' })
+  expect((await ui.find({ type: 'Text' }))?.text).toBe('Вот окно, где дерево: `код окно`.')
+
+  await $.command.run({ ...RUN, args: 'on' })
+  expect((await ui.find({ type: 'Text' }))?.text).toBe('Вოт ოкнო, гдე дეрეвო: `код окно`.')
   await ui.unmount()
 })

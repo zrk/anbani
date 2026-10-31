@@ -3,22 +3,30 @@ import type { EngineInterface, Register } from 'claude-code'
 
 import { STEPS, toGeorgian } from './translit'
 
-// The level lives in $.store, so it carries across sessions; the atom mirrors
-// it for the session, and a write to it redraws every reply already on screen.
+// The level and the pause live in $.store, so they carry across sessions; the
+// atoms mirror them for the session, and a write redraws every reply on screen.
 const level = atom({ plugin: 'anbani', key: 'level' } as const, 1)
+const off = atom({ plugin: 'anbani', key: 'off' } as const, false)
+
+type Setting = { n: number; off: boolean }
 
 const clamp = (n: number) => Math.max(0, Math.min(STEPS.length, Math.round(n)))
 
-function parse(args: string, now: number): number | null {
+function parse(args: string, now: Setting): Setting | null {
   const arg = args.trim().toLowerCase()
   if (arg === '' || arg === 'show') return now
-  if (arg === '+' || arg === 'next') return now + 1
-  if (arg === '-' || arg === 'prev') return now - 1
-  if (arg === 'off') return 0
-  if (arg === 'all') return STEPS.length
-  const n = Number(arg)
+  if (arg === 'off') return { ...now, off: true }
+  if (arg === 'on') return { ...now, off: false }
+  const n =
+    arg === '+' || arg === 'next'
+      ? now.n + 1
+      : arg === '-' || arg === 'prev'
+        ? now.n - 1
+        : arg === 'all'
+          ? STEPS.length
+          : Number(arg)
 
-  return Number.isFinite(n) ? n : null
+  return Number.isFinite(n) ? { n: clamp(n), off: false } : null
 }
 
 const pair = (i: number) => {
@@ -27,39 +35,41 @@ const pair = (i: number) => {
   return step ? `${step[1]} = ${step[0]}` : ''
 }
 
-function report(n: number, before: number): string {
+function report({ n, off }: Setting, before: Setting): string {
+  if (off) return `Замена выключена, букв сохранено: ${n}. Вернуть: /anbani on.`
   const learned = STEPS.slice(0, n)
     .map((_, i) => pair(i))
     .join(' · ')
   const head =
-    n > before
+    n > before.n
       ? `Новая буква: ${pair(n - 1)}. Букв: ${n} из ${STEPS.length}.`
-      : n === 0
-        ? 'Замена выключена.'
-        : `Букв: ${n} из ${STEPS.length}.`
+      : `Букв: ${n} из ${STEPS.length}.`
   const tail = n < STEPS.length ? `Следующая: ${pair(n)}.` : 'Все буквы введены.'
 
   return [head, learned, tail].filter(Boolean).join('\n')
 }
 
 async function apply($: EngineInterface, args: string): Promise<string> {
-  const before = await read($, level)
-  const wanted = parse(args, before)
-  if (wanted === null) return `Не понял «${args}». Варианты: + − N off all.`
-  const n = clamp(wanted)
-  await update($, level, () => n)
-  await $.store.set('level', n)
+  const before = { n: await read($, level), off: await read($, off) }
+  const now = parse(args, before)
+  if (now === null) return `Не понял «${args}». Варианты: + − N off on all.`
+  await update($, level, () => now.n)
+  await update($, off, () => now.off)
+  await $.store.set('level', now.n)
+  await $.store.set('off', now.off)
 
-  return report(n, before)
+  return report(now, before)
 }
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     const saved = clamp(Number((await $.store.get('level')) ?? 1) || 0)
+    const paused = (await $.store.get('off')) === true
     await update($, level, () => saved)
+    await update($, off, () => paused)
     await $.command.register({
       name: 'anbani',
-      description: 'Georgian letters in replies: + next, - back, N set, off, all',
+      description: 'Georgian letters in replies: + next, - back, N set, off/on pause, all',
     })
     await $.tool.register({
       name: 'level',
@@ -70,7 +80,8 @@ export const register: Register = on => {
         properties: {
           change: {
             type: 'string',
-            description: '"+" one more letter, "-" one fewer, a number to set, "off", "all", or "show"',
+            description:
+              '"+" one more letter, "-" one fewer, a number to set, "off" to pause, "on" to resume, "all", or "show"',
           },
         },
         required: ['change'],
@@ -90,7 +101,7 @@ export const register: Register = on => {
 
   on('ui.render', { component: 'AssistantMessage' }, async ($, e, next) => {
     const n = await read($, level)
-    if (n === 0) return next(e)
+    if (n === 0 || (await read($, off))) return next(e)
 
     return next({ ...e, props: { ...e.props, text: toGeorgian(e.props.text, n) } })
   })
