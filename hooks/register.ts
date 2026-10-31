@@ -5,7 +5,6 @@ import { STEPS, toGeorgian } from './translit'
 
 // The level lives in $.store, so it carries across sessions; the atom mirrors
 // it for the session, and a write to it redraws every reply already on screen.
-// A fresh store starts at one letter, so the mod shows itself at once.
 const level = atom({ plugin: 'anbani', key: 'level' } as const, 1)
 
 const clamp = (n: number) => Math.max(0, Math.min(STEPS.length, Math.round(n)))

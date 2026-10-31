@@ -9,9 +9,6 @@ export const STEPS: ReadonlyArray<readonly [string, string]> = [
   ['дж', 'ჯ'], ['дз', 'ძ'],
 ]
 
-// Code, inline code, link targets and bare URLs keep their letters: a path or
-// a command must stay what it is. An unclosed fence (a reply still streaming)
-// runs to the end of the text.
 const PROTECTED = /(```|~~~)[\s\S]*?(?:\1|$)|`[^`\n]*`|\]\([^)]*\)|https?:\/\/\S+/g
 
 const cache = new Map<number, (plain: string) => string>()

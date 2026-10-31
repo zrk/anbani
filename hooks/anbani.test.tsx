@@ -1,4 +1,5 @@
 import { expect, mock, test } from 'claude-code/testing'
+import type { On } from 'claude-code'
 
 const REPLY = {
   plugin: 'anbani',
@@ -13,8 +14,7 @@ const RUN = {
   presentation: { isFullscreen: false, columns: 80 },
 } as const
 
-test('a reply turns Georgian on screen, from one letter on, code kept', async ($, on) => {
-  // These hooks stand for the engine beneath the plugin.
+function engine(on: On) {
   mock.store(on)
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('command.register', () => ({ value: { command: 'anbani' } }))
@@ -24,14 +24,21 @@ test('a reply turns Georgian on screen, from one letter on, code kept', async ($
 
     return <Text>{e.component === 'AssistantMessage' ? e.props.text : ''}</Text>
   })
+}
 
+test('a fresh install shows one letter at once, so the mod is seen working', async ($, on) => {
+  engine(on)
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
 
-  for (const surface of ['terminal', 'desktop'] as const) {
-    const ui = await $.ui.mount({ ...REPLY, surface })
-    expect((await ui.find({ type: 'Text' }))?.text).toBe('Вოт ოкнო, где деревო: `код окно`.')
-    await ui.unmount()
-  }
+  const ui = await $.ui.mount({ ...REPLY, surface: 'desktop' })
+  expect((await ui.find({ type: 'Text' }))?.text).toBe('Вოт ოкнო, где деревო: `код окно`.')
+  await ui.unmount()
+})
+
+test('each /anbani + adds a letter on every surface, off restores the text', async ($, on) => {
+  engine(on)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  await $.command.run({ ...RUN, args: '1' })
 
   const added = await $.command.run({ ...RUN, args: '+' })
   expect(added.text).toContain('Новая буква: ე = е')
