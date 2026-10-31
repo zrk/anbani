@@ -1,0 +1,15 @@
+{
+  "name": "anbani",
+  "owner": { "name": "zrk" },
+  "metadata": {
+    "description": "Learn the Georgian alphabet from Claude's replies"
+  },
+  "plugins": [
+    {
+      "name": "anbani",
+      "source": "./",
+      "description": "Russian letters in Claude's replies turn Georgian one at a time, on screen only",
+      "version": "0.1.0"
+    }
+  ]
+}

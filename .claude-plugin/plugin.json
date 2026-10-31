@@ -1,0 +1,11 @@
+{
+  "name": "anbani",
+  "version": "0.1.0",
+  "description": "Learn the Georgian alphabet: Russian letters in Claude's replies turn Georgian one at a time, on screen only",
+  "author": {
+    "name": "zrk"
+  },
+  "types": "./types/index.d.ts",
+  "license": "MIT",
+  "repository": "https://github.com/zrk/anbani"
+}
