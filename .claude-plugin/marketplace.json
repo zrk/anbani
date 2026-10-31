@@ -1,14 +1,16 @@
 {
   "name": "anbani",
-  "owner": { "name": "zrk" },
+  "owner": {
+    "name": "zrk"
+  },
   "metadata": {
-    "description": "Learn the Georgian alphabet from Claude's replies"
+    "description": "Учить грузинский алфавит по ответам Claude"
   },
   "plugins": [
     {
       "name": "anbani",
       "source": "./",
-      "description": "Russian letters in Claude's replies turn Georgian one at a time, on screen only",
+      "description": "Грузинский алфавит за чтением: русские буквы в ответах Claude по одной становятся грузинскими, только на экране",
       "version": "0.1.0"
     }
   ]

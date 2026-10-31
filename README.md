@@ -1,60 +1,64 @@
 # anbani
 
-A Claude Code mod for learning the Georgian alphabet by reading. Russian
-letters in Claude's replies turn into Georgian ones, one letter at a time,
-starting with the most frequent. Only the drawing changes: the transcript, and
-what Claude reads back, stay plain Russian.
+*A Claude Code mod for Russian speakers learning the Georgian alphabet.*
 
-## Install
+Мод для Claude Code, чтобы выучить грузинский алфавит за чтением. В ответах
+Claude русские буквы по одной заменяются грузинскими, начиная с самых частых.
+Сначала все «о» становятся ო, потом «е» становятся ე, и так дальше. Меняется
+только то, что видно на экране: в истории сессии и в том, что читает Claude,
+остаётся обычный русский текст.
 
-At the prompt of a Claude Code terminal session:
+## Установка
+
+В терминальной сессии Claude Code:
 
 ```
 /plugin install anbani --marketplace zrk/anbani
 ```
 
-Answer `y` to add the marketplace, then pick the user scope. In the desktop
-app, where `/plugin` does not run: click + next to the prompt box, then
-Plugins, Add marketplace with `zrk/anbani`, then Add plugin.
+Ответить `y`, чтобы добавить маркетплейс, и выбрать user scope. В десктопном
+приложении `/plugin` не работает. Там: «+» у поля ввода → Plugins → Add
+marketplace → `zrk/anbani` → Add plugin.
 
-## Use
+## Как пользоваться
 
-A fresh install starts with one letter, о → ო.
+Сразу после установки заменена одна буква: о → ო.
 
-| Command | Effect |
+| Команда | Что делает |
 | --- | --- |
-| `/anbani +` | one more letter |
-| `/anbani -` | one letter fewer |
-| `/anbani 10` | set the number of letters |
-| `/anbani off` / `/anbani all` | none / all of them |
-| `/anbani` | show the letters learned so far |
+| `/anbani +` | добавляет следующую букву |
+| `/anbani -` | убирает последнюю |
+| `/anbani 10` | ставит сразу 10 букв |
+| `/anbani off` / `/anbani all` | выключает замену / включает все буквы |
+| `/anbani` | показывает, какие буквы уже введены |
 
-Where a slash command does not reach the mod, ask Claude to add or remove a
-letter: the mod gives it a tool for that. The level is kept across sessions.
+Если слэш-команда не доходит до мода, можно просто попросить Claude «добавь
+букву»: у мода есть для этого инструмент. Уровень сохраняется между сессиями.
 
-## Letters
+## Буквы
 
-In order of frequency in Russian text:
+По частоте в русском тексте:
 
 о ო · е ე · а ა · и ი · н ნ · т ტ · с ს · р რ · в ვ · л ლ · к კ · м მ · д დ ·
 п პ · у უ · г გ · з ზ · б ბ · ч ჩ · х ხ · ж ჟ · ш შ · ц ც · ф ფ · дж ჯ · дз ძ
 
-т к п map to the ejectives ტ კ პ and ф to ფ, as Georgian writes loanwords
-(ტელეფონი).
+т, к, п становятся ტ, კ, პ, а ф становится ფ: так грузинский пишет
+заимствованные слова (ტელეფონი).
 
-## Limits
+## Ограничения
 
-- Code blocks, inline code, link targets and bare URLs keep their letters.
-- Only Claude's replies change; your messages and tool output do not.
-- Seven Georgian letters have no Russian counterpart and are not taught:
+- Блоки кода, `inline code`, адреса ссылок и голые URL не трогаются.
+- Меняются только ответы Claude. Ваши сообщения и вывод инструментов остаются
+  как есть.
+- Семь грузинских букв так не выучить, у них нет русской пары:
   თ ქ ღ ყ წ ჭ ჰ.
-- Nine Russian letters have no single Georgian one and stay Cyrillic:
-  я ю ё э ы ь ъ й щ.
+- Девять русских букв остаются кириллицей, отдельной грузинской буквы для них
+  нет: я ю ё э ы ь ъ й щ.
 
-## Develop
+## Разработка
 
-`hooks/translit.ts` holds the letter table and the transform,
-`hooks/register.ts` the hooks. Check with:
+Таблица букв и сама замена лежат в `hooks/translit.ts`, хуки — в
+`hooks/register.ts`. Проверка:
 
 ```
 claude plugin validate .

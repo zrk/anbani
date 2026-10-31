@@ -1,7 +1,7 @@
 {
   "name": "anbani",
   "version": "0.1.0",
-  "description": "Learn the Georgian alphabet: Russian letters in Claude's replies turn Georgian one at a time, on screen only",
+  "description": "Грузинский алфавит за чтением: русские буквы в ответах Claude по одной становятся грузинскими, только на экране",
   "author": {
     "name": "zrk"
   },
