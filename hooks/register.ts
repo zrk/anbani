@@ -3,8 +3,11 @@ import type { EngineInterface, Register } from 'claude-code'
 
 import { STEPS, toGeorgian } from './translit'
 
-// The level and the pause live in $.store, so they carry across sessions; the
-// atoms mirror them for the session, and a write redraws every reply on screen.
+// The level and the pause live in $.store, shared by every session; the atoms
+// mirror them for the session, and a write redraws every reply on screen. The
+// engine raises no event when another session writes the store, so each
+// session polls it.
+const POLL_MS = 3000
 const level = atom({ plugin: 'anbani', key: 'level' } as const, 1)
 const off = atom({ plugin: 'anbani', key: 'off' } as const, false)
 
@@ -49,24 +52,37 @@ function report({ n, off }: Setting, before: Setting): string {
   return [head, learned, tail].filter(Boolean).join('\n')
 }
 
+async function stored($: EngineInterface): Promise<Setting> {
+  return {
+    n: clamp(Number((await $.store.get('level')) ?? 1) || 0),
+    off: (await $.store.get('off')) === true,
+  }
+}
+
+async function show($: EngineInterface, now: Setting) {
+  if ((await read($, level)) !== now.n) await update($, level, () => now.n)
+  if ((await read($, off)) !== now.off) await update($, off, () => now.off)
+}
+
+async function sync($: EngineInterface) {
+  await show($, await stored($))
+}
+
 async function apply($: EngineInterface, args: string): Promise<string> {
-  const before = { n: await read($, level), off: await read($, off) }
+  const before = await stored($)
   const now = parse(args, before)
   if (now === null) return `Не понял «${args}». Варианты: + − N off on all.`
-  await update($, level, () => now.n)
-  await update($, off, () => now.off)
   await $.store.set('level', now.n)
   await $.store.set('off', now.off)
+  await show($, now)
 
   return report(now, before)
 }
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
-    const saved = clamp(Number((await $.store.get('level')) ?? 1) || 0)
-    const paused = (await $.store.get('off')) === true
-    await update($, level, () => saved)
-    await update($, off, () => paused)
+    await sync($)
+    $.clock.every(POLL_MS, () => void sync($))
     await $.command.register({
       name: 'anbani',
       description: 'Georgian letters in replies: + next, - back, N set, off/on pause, all',

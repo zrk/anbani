@@ -14,8 +14,13 @@ const RUN = {
   presentation: { isFullscreen: false, columns: 80 },
 } as const
 
-function engine(on: On, stored?: Record<string, unknown>) {
-  mock.store(on, stored)
+function engine(on: On, shared: Record<string, unknown> = {}) {
+  on('store.get', (_, e) => ({ value: shared[e.key] }))
+  on('store.set', (_, e) => {
+    shared[e.key] = e.value
+
+    return { value: undefined }
+  })
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('command.register', () => ({ value: { command: 'anbani' } }))
   on('tool.register', () => ({ value: { tool: 'mcp__anbani__level' } }))
@@ -24,6 +29,8 @@ function engine(on: On, stored?: Record<string, unknown>) {
 
     return <Text>{e.component === 'AssistantMessage' ? e.props.text : ''}</Text>
   })
+
+  return mock.clock(on)
 }
 
 test('a fresh install shows one letter at once, so the mod is seen working', async ($, on) => {
@@ -79,4 +86,29 @@ test('a pause survives a restart: the next session starts off, on restores the l
   await $.command.run({ ...RUN, args: 'on' })
   expect((await ui.find({ type: 'Text' }))?.text).toBe('Вოт ოкнო, гдე дეрეвო: `код окно`.')
   await ui.unmount()
+})
+
+test('an off in another open session reaches this one within seconds', async ($, on) => {
+  const shared: Record<string, unknown> = { level: 2 }
+  const clock = engine(on, shared)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+
+  const ui = await $.ui.mount({ ...REPLY, surface: 'desktop' })
+  expect((await ui.find({ type: 'Text' }))?.text).toBe('Вოт ოкнო, гдე дეрეвო: `код окно`.')
+
+  shared.off = true
+  await clock.advance(3000)
+  expect((await ui.find({ type: 'Text' }))?.text).toBe('Вот окно, где дерево: `код окно`.')
+  await ui.unmount()
+})
+
+test('a + counts from the stored level, so a session behind the others cannot roll it back', async ($, on) => {
+  const shared: Record<string, unknown> = { level: 2 }
+  engine(on, shared)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+
+  shared.level = 5
+  const added = await $.command.run({ ...RUN, args: '+' })
+  expect(added.text).toContain('Новая буква: ტ = т')
+  expect(shared.level).toBe(6)
 })
