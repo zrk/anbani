@@ -12,10 +12,11 @@ export const STEPS: ReadonlyArray<readonly [string, string]> = [
 // Kept as is: a fenced block (the fence may be longer than three marks, so a
 // block can hold a shorter fence; an unclosed one runs to the end of the text,
 // hence (?![\s\S]) and not $, which the m flag would turn into a line end),
-// inline code, a link target, a bare URL, and the target of a reference link
-// definition ("[label]: url", but not a footnote "[^1]: text").
+// inline code in one or two backticks (``a `b` c``), a link target, a bare
+// URL, and the target of a reference link definition ("[label]: url", but not
+// a footnote "[^1]: text").
 const PROTECTED =
-  /(`{3,}|~{3,})[\s\S]*?(?:\1|(?![\s\S]))|`[^`\n]*`|\]\([^)]*\)|https?:\/\/\S+|(?<=^[ \t]*\[(?!\^)[^\]\n]+\]:[ \t]*)\S+/gm
+  /(?<fence>`{3,}|~{3,})[\s\S]*?(?:\k<fence>|(?![\s\S]))|(?<tick>`{1,2})(?:(?!\k<tick>)[^\n])+\k<tick>|\]\([^)]*\)|https?:\/\/\S+|(?<=^[ \t]*\[(?!\^)[^\]\n]+\]:[ \t]*)\S+/gm
 
 const cache = new Map<number, (plain: string) => string>()
 
