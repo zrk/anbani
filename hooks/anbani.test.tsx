@@ -166,3 +166,12 @@ test('all turns every letter on, and a bare /anbani only reports', async ($, on)
   expect(all.text).toContain('Букв: 26 из 26.')
   expect(shared.level).toBe(26)
 })
+
+test('a stored level that is not a number falls back to one letter, not to off', async ($, on) => {
+  engine(on, { level: 'много' })
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+
+  const ui = await $.ui.mount({ ...REPLY, surface: 'desktop' })
+  expect((await ui.find({ type: 'Text' }))?.text).toBe('Вოт ოкнო, где деревო: `код окно`.')
+  await ui.unmount()
+})

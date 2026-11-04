@@ -56,9 +56,13 @@ function report({ n, off }: Setting, before: Setting): string {
   return [head, learned, tail].filter(Boolean).join('\n')
 }
 
+// A stored level that is not a number (a hand-edited or damaged store) falls
+// back to the default of one letter instead of silently turning the mod off.
 async function stored($: EngineInterface): Promise<Setting> {
+  const n = Number((await $.store.get('level')) ?? 1)
+
   return {
-    n: clamp(Number((await $.store.get('level')) ?? 1) || 0),
+    n: clamp(Number.isFinite(n) ? n : 1),
     off: (await $.store.get('off')) === true,
   }
 }
