@@ -175,3 +175,27 @@ test('a stored level that is not a number falls back to one letter, not to off',
   expect((await ui.find({ type: 'Text' }))?.text).toBe('Вოт ოкнო, где деревო: `код окно`.')
   await ui.unmount()
 })
+
+test('the level tool does what /anbani does, for a reply like "add a letter"', async ($, on) => {
+  const shared: Record<string, unknown> = { level: 2 }
+  engine(on, shared)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  const call = (change?: string) =>
+    $.tool.call({ tool: 'mcp__anbani__level', ...(change === undefined ? {} : { change }) })
+
+  const added = await call('+')
+  expect(added.result).toContain('Новая буква: ა = а')
+  expect(shared.level).toBe(3)
+
+  for (const same of [undefined, 'show']) {
+    expect((await call(same)).result).toContain('Букв: 3 из 26.')
+    expect(shared.level).toBe(3)
+  }
+
+  expect((await call('что-то')).result).toContain('Не понял «что-то»')
+  expect(shared.level).toBe(3)
+
+  await call('off')
+  expect(shared.off).toBe(true)
+  expect(shared.level).toBe(3)
+})
