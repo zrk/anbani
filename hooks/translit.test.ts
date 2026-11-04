@@ -28,6 +28,13 @@ test('a fence longer than three marks keeps the shorter fence inside it', async 
   )
 })
 
+test('inline code in double backticks keeps its letters, a lone backtick does not hide the text', async () => {
+  expect(toGeorgian('окно ``окно`` `` `окно` `` окно', 1)).toBe(
+    'ოкнო ``окно`` `` `окно` `` ოкнო',
+  )
+  expect(toGeorgian('окно ` окно', 1)).toBe('ოкнო ` ოкнო')
+})
+
 test('the target of a reference link keeps its letters, a footnote does not', async () => {
   expect(toGeorgian('[окно]: wiki/окно.md\nокно', 1)).toBe('[ოкнო]: wiki/окно.md\nოкнო')
   expect(toGeorgian('[^1]: окно', 1)).toBe('[^1]: ოкнო')
