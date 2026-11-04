@@ -9,7 +9,13 @@ export const STEPS: ReadonlyArray<readonly [string, string]> = [
   ['дж', 'ჯ'], ['дз', 'ძ'],
 ]
 
-const PROTECTED = /(```|~~~)[\s\S]*?(?:\1|$)|`[^`\n]*`|\]\([^)]*\)|https?:\/\/\S+/g
+// Kept as is: a fenced block (the fence may be longer than three marks, so a
+// block can hold a shorter fence; an unclosed one runs to the end of the text,
+// hence (?![\s\S]) and not $, which the m flag would turn into a line end),
+// inline code, a link target, a bare URL, and the target of a reference link
+// definition ("[label]: url", but not a footnote "[^1]: text").
+const PROTECTED =
+  /(`{3,}|~{3,})[\s\S]*?(?:\1|(?![\s\S]))|`[^`\n]*`|\]\([^)]*\)|https?:\/\/\S+|(?<=^[ \t]*\[(?!\^)[^\]\n]+\]:[ \t]*)\S+/gm
 
 const cache = new Map<number, (plain: string) => string>()
 

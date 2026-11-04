@@ -22,6 +22,17 @@ test('a tilde fence keeps its code too', async () => {
   expect(toGeorgian('окно\n~~~\nокно\n~~~\nокно', 1)).toBe('ოкнო\n~~~\nокно\n~~~\nოкнო')
 })
 
+test('a fence longer than three marks keeps the shorter fence inside it', async () => {
+  expect(toGeorgian('окно\n````md\n```\nокно\n```\n````\nокно', 1)).toBe(
+    'ოкнო\n````md\n```\nокно\n```\n````\nოкнო',
+  )
+})
+
+test('the target of a reference link keeps its letters, a footnote does not', async () => {
+  expect(toGeorgian('[окно]: wiki/окно.md\nокно', 1)).toBe('[ოкнო]: wiki/окно.md\nოкнო')
+  expect(toGeorgian('[^1]: окно', 1)).toBe('[^1]: ოкнო')
+})
+
 test('level 0 and below, and text without Russian letters, come back unchanged', async () => {
   expect(toGeorgian('окно', 0)).toBe('окно')
   expect(toGeorgian('окно', -3)).toBe('окно')
