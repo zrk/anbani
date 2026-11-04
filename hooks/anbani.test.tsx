@@ -112,3 +112,57 @@ test('a + counts from the stored level, so a session behind the others cannot ro
   expect(added.text).toContain('Новая буква: ტ = т')
   expect(shared.level).toBe(6)
 })
+
+test('a typographic minus steps back like the plain one', async ($, on) => {
+  const shared: Record<string, unknown> = { level: 4 }
+  engine(on, shared)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+
+  for (const [dash, level] of [['-', 3], ['−', 2], ['–', 1], ['prev', 0]] as const) {
+    await $.command.run({ ...RUN, args: dash })
+    expect(shared.level).toBe(level)
+  }
+})
+
+test('input that is not a command changes nothing and says what is accepted', async ($, on) => {
+  const shared: Record<string, unknown> = { level: 3, off: true }
+  engine(on, shared)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+
+  const said = await $.command.run({ ...RUN, args: 'побольше' })
+  expect(said.text).toContain('Не понял «побольше»')
+  expect(said.text).toContain('+ - N off on all')
+  expect(shared).toEqual({ level: 3, off: true })
+})
+
+test('a number or a step outside the table stops at its ends', async ($, on) => {
+  const shared: Record<string, unknown> = {}
+  engine(on, shared)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+
+  await $.command.run({ ...RUN, args: '99' })
+  expect(shared.level).toBe(26)
+  const full = await $.command.run({ ...RUN, args: '+' })
+  expect(shared.level).toBe(26)
+  expect(full.text).toContain('Все буквы введены.')
+
+  await $.command.run({ ...RUN, args: '-5' })
+  expect(shared.level).toBe(0)
+  await $.command.run({ ...RUN, args: '-' })
+  expect(shared.level).toBe(0)
+})
+
+test('all turns every letter on, and a bare /anbani only reports', async ($, on) => {
+  const shared: Record<string, unknown> = { level: 2 }
+  engine(on, shared)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+
+  const shown = await $.command.run({ ...RUN, args: '' })
+  expect(shown.text).toContain('Букв: 2 из 26.')
+  expect(shown.text).toContain('Следующая: ა = а.')
+  expect(shared.level).toBe(2)
+
+  const all = await $.command.run({ ...RUN, args: 'all' })
+  expect(all.text).toContain('Букв: 26 из 26.')
+  expect(shared.level).toBe(26)
+})
