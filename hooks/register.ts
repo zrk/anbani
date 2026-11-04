@@ -15,8 +15,12 @@ type Setting = { n: number; off: boolean }
 
 const clamp = (n: number) => Math.max(0, Math.min(STEPS.length, Math.round(n)))
 
+// Typographic minus signs (U+2212, en dash, em dash) count as "-": keyboards
+// and autocorrect produce them, and the error message below shows one.
+const DASHES = /^[−–—]$/
+
 function parse(args: string, now: Setting): Setting | null {
-  const arg = args.trim().toLowerCase()
+  const arg = args.trim().toLowerCase().replace(DASHES, '-')
   if (arg === '' || arg === 'show') return now
   if (arg === 'off') return { ...now, off: true }
   if (arg === 'on') return { ...now, off: false }
@@ -71,7 +75,7 @@ async function sync($: EngineInterface) {
 async function apply($: EngineInterface, args: string): Promise<string> {
   const before = await stored($)
   const now = parse(args, before)
-  if (now === null) return `Не понял «${args}». Варианты: + − N off on all.`
+  if (now === null) return `Не понял «${args}». Варианты: + - N off on all.`
   await $.store.set('level', now.n)
   await $.store.set('off', now.off)
   await show($, now)
